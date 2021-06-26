@@ -5,9 +5,12 @@ import requests
 
 
 class BinanceDownloader(object):
-    def __init__(self, URL, folder_path,
+    def __init__(self,
+                 URL: 'str list',
+                 folder_path: str,
                  start_name_URL: int,  # first letter of the coin name position in the URL
-                 end_name_URL: str):  # symbol (letter, _, ...) after the last letter of the coin name in the URL
+                 end_name_URL: str  # symbol (letter, _, ...) after the last letter of the coin name in the URL
+                 ):
         self.URL = URL
         self.folder_path = folder_path
         self.start_name_URL = start_name_URL
@@ -67,25 +70,37 @@ class BinanceDownloader(object):
     #         coin.to_csv(coins_path[index_name] + '.csv')
     #         index_name += 1
 
-    def create_dataframe_list(self, header=1, **kwargs):
+    def create_dataframe_list(self,
+                              header: int = 1,
+                              **kwargs
+                              ):
+
         if self.__csv_stored:
-            self.dataframe_list = [pd.read_csv(coin_path + '.csv', header=header, **kwargs) for coin_path in self.coins_path]
+            self.dataframe_list = [pd.read_csv(coin_path + '.csv',
+                                               header=header,
+                                               **kwargs
+                                               ) for coin_path in self.coins_path]
         else:
-            self.dataframe_list = [pd.read_csv(url, header=header, **kwargs) for url in self.URL]
+            self.dataframe_list = [pd.read_csv(url,
+                                               header=header,
+                                               **kwargs
+                                               ) for url in self.URL]
         return self.dataframe_list
 
     def create_specific_dataframe(self,
                                   target_column: str,
                                   index_name: str = 'date',
-                                  reverse=False,
-                                  # **kwargs: other args for import DataFrame using create_dataframe_list
-                                  **kwargs) -> 'DataFrame object':
+                                  reverse: bool = True,
+                                  **kwargs  # **kwargs: other args for import DataFrame using create_dataframe_list
+                                  ) -> 'DataFrame object':
         """Returns a DataFrame with specific columns.
         ATTENTION: the index which you put have to be the longest of the dataframe. Check the URL passed at the first
         instance of BinanceDownloader e put the url which cointains the longest series at the first position."""
-        dataframe_list = BinanceDownloader.create_dataframe_list(self,
-                                                                 usecols=[index_name, target_column], **kwargs)
 
+        dataframe_list = BinanceDownloader.create_dataframe_list(self,
+                                                                 usecols=[index_name, target_column],
+                                                                 **kwargs
+                                                                 )
         specific_dataframe = dataframe_list[0].\
                                                 rename(columns={target_column:self.coin_names[0]}).\
                                                 set_index(index_name)
@@ -106,7 +121,9 @@ class BinanceDownloader(object):
     def dataframe_log_returns(self,
                               prices_column_name: str = 'close',
                               index_name: str = 'date',
-                              **kwargs):
+                              **kwargs
+                              ):
+
         if self.specific_dataframe is None:
             dataframe = BinanceDownloader.create_specific_dataframe(self, target_column=prices_column_name,
                                                                     index_name=index_name, **kwargs)

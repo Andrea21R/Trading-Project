@@ -11,17 +11,21 @@ class DataVisualization(object):
 
     """It's a service only for Portfolio performance and its assets visualization..."""
 
-    def __init__(self, Portfolio_obj: 'class instance', prices: DataFrame):
+    def __init__(self,
+                 Portfolio_obj: 'class instance',
+                 prices: DataFrame
+                 ):
         self.Portfolio = Portfolio_obj
         self.prices = prices[self.Portfolio.assets] if isinstance(prices, DataFrame) else TypeError
 
-    def _index_computing_for_assets(self, statistics_period: int):
+    def _index_computing_for_assets(self,
+                                    statistics_period: int
+                                    ):
         last_prices = self.prices[-statistics_period:]  # pd.Series
         self._assets_last_tot_ret = last_prices.iloc[-1] / last_prices.iloc[0] - 1  # pd.Series
         self._assets_last_avg_ret = last_prices.pct_change().mean()
         self._assets_last_std_ret = last_prices.pct_change().std()  # pd.Series
-        self._assets_sharpe_ratio = last_prices.pct_change().mean() / self._assets_last_std_ret
-
+        self._assets_sharpe_ratio = last_prices.pct_change().mean() / self._assets_last_std_re
         self._assets_calmar_ratio = {}
         for coin in last_prices.columns:
             s = MySeries(list(last_prices[coin].dropna()), is_returns=False)
@@ -42,7 +46,10 @@ class DataVisualization(object):
         else:
             return None
 
-    def assets_summary_visualization(self, statistics_period, data_frequency: 'int: obs per day'):
+    def assets_summary_visualization(self,
+                                     statistics_period: int,
+                                     data_frequency: 'int: obs per day'
+                                     ):
 
         DataVisualization._index_computing_for_assets(self, statistics_period=statistics_period)
         now = datetime.now()
@@ -72,7 +79,10 @@ class DataVisualization(object):
                 print(f'                 - {coin} --> N/A')
         print('\n******************************************************')
 
-    def portfolio_summary_visualization(self, frequency_upgrade: 'str'):
+    def portfolio_summary_visualization(self,
+                                        frequency_upgrade: 'str'
+                                        ):
+
         Portfolio = self.Portfolio
         DataVisualization._index_computing_for_portfolio(self)
         now = datetime.now()

@@ -4,7 +4,10 @@ from statistics import stdev, mean
 
 class MySeries(object):
 
-    def __init__(self, series, is_returns=True):
+    def __init__(self,
+                 series: list,
+                 is_returns: bool = True
+                 ):
         self.__is_returns = is_returns
         self.series = MySeries.__set_series(self, series)
 
@@ -129,7 +132,9 @@ class MySeries(object):
     def standard_deviation(self):
         return stdev(self.series)
 
-    def max_drawdown(self, log_to_console= False):
+    def max_drawdown(self,
+                     log_to_console: bool = False
+                     ):
         """"\nAverage between the global max of the series and the following local min value after the drop."""
         global lo
         hi = max(self.series)
@@ -174,7 +179,10 @@ class MySeries(object):
         else:
             return None
 
-    def sharpe_ratio(self, rf= None, rf_is_returns=True):
+    def sharpe_ratio(self,
+                     rf: list = None,
+                     rf_is_returns: bool = True
+                     ):
         # I set the rf=0 if the user didn't provide one
         if not rf:
             rf = [0 for i in range(len(self.series))]
