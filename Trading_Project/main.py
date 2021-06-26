@@ -19,7 +19,9 @@ price = Downloader.create_specific_dataframe(target_column='close',
                                              index_name='date',
                                              reverse=True
                                              )
-# clean the data: 1) remove all NaN; 2) remove too short series
+# clean the data:
+# 1) remove all NaN
+# 2) remove too short series
 for coin in price.columns:
     if price[coin].dropna().__len__() < 7838:
         del price[coin]
@@ -40,9 +42,7 @@ trading_system.portfolio_building(starting_value=1_000_000,
                                   rolling=24*30
                                   )
 # data visualization
-visualizer = DataVisualization(Portfolio_obj=trading_system.portfolio,
-                               prices=dataset[0]
-                               )
+visualizer = DataVisualization(Portfolio_obj=trading_system.portfolio, prices=dataset[0])
 visualizer.assets_summary_visualization(statistics_period=len(dataset[0]), data_frequency=24)
 
 
@@ -58,11 +58,11 @@ for week in dataset[1:]:
                                          bid_ask_spread=0.0015
                                          )
 # data visualization
-visualizer = DataVisualization(Portfolio_obj=trading_system.portfolio,
-                               prices=dataset[-1]
-                               )
+visualizer = DataVisualization(Portfolio_obj=trading_system.portfolio, prices=dataset[-1])
 visualizer.assets_summary_visualization(statistics_period=len(dataset[-1]), data_frequency=24)
 visualizer.portfolio_summary_visualization(frequency_upgrade='monthly')
+
+# GRAPH
 # graph portfolio value
 normalized_value = [x / 1_000_000 for x in trading_system.portfolio.history_value]
 plt.figure()
@@ -103,6 +103,7 @@ for count in range(len(trading_system.portfolio.history_profit_loss) - 1):
         dict2 = trading_system.portfolio.history_profit_loss[count + 1].copy()
         del dict2['date']
         final = merge_heterogeneous_dicts(dict1, dict2)
+
 # graph profit/loss
 plt.figure()
 value_reduced = [value/100_000 for value in list(final.values())]
