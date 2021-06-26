@@ -1,48 +1,56 @@
 import numpy as np
 import pandas as pd
 from pandas import Series, DataFrame
-
+from datetime import datetime
 
 class Portfolio(object):
     """Class to build and manage an equally-weighted portfolio"""
 
-    def __init__(self, starting_value: int, assets: 'string list'):
+    def __init__(self, starting_value, assets: 'string list', date: datetime):
+        self.operation_dates = [date]
         self.value = starting_value
         self.history_value = [self.value]
         self.assets = assets
-        self.allocation = {key: value for (key, value) in zip(assets, [self.value / len(assets)] * len(assets))}
+        self.allocation = {key: value for (key, value) in zip(assets, [self.value / len(assets)] * len(assets))}\
+                            if assets else {}
+        self.history_prices = []
         self.history_returns = []
         self.history_profit_loss = []
+        # for turnover computing
+        self.buy = starting_value
+        self.sell = 0
 
     def _asset_turnover(self, new_assets: 'string list'):
-        new = []
-        hold = []
-        for asset in new_assets:
-            if asset in self.assets:
-                hold.append(asset)
-            else:
-                new.append(asset)
-        off = [asset for asset in self.assets if not(asset in new_assets)]
+            new = []
+            hold = []
+            for asset in new_assets:
+                if asset in self.assets:
+                    hold.append(asset)
+                else:
+                    new.append(asset)
+            off = [asset for asset in self.assets if not(asset in new_assets)]
 
-        return {'new': new, 'hold': hold, 'off': off}
+            return {'new': new, 'hold': hold, 'off': off}
 
-    def _upgrade_returns(self, new_prices: DataFrame):
+    def _upgrade_returns(self, new_prices: DataFrame, time_passed: int):
 
         if isinstance(new_prices, DataFrame):
             ret_assets = [asset for asset in new_prices.columns if asset in self.assets]
-            self.history_returns = ((new_prices.iloc[-1] / new_prices.iloc[0]) - 1)[ret_assets]
+            self.history_prices.append(new_prices[ret_assets])
+            self.history_returns.append(((new_prices.iloc[-1] / new_prices.iloc[-time_passed]) - 1)[ret_assets])
             # upgrade the positions, then in rebalancing() I'll set them to the newest
-            self.allocation = {key: value * (1 + self.history_returns[key])
+            self.allocation = {key: value * (1 + self.history_returns[-1][key])
                                for (key, value) in zip(self.allocation.keys(),
-                                                            self.allocation.values())}
+                                                       self.allocation.values())}
             self.value = sum(self.allocation.values())
         else:
             raise TypeError("Input have to be a DataFrame object!")
 
-    def rebalancing(self, new_assets: 'string list', new_prices, bid_ask_spread=None):
+    def rebalancing(self, new_assets: 'string list', new_prices: DataFrame, time_passed: int, bid_ask_spread=None):
         """in "new_prices" remember to insert also the last_price before the last re-balancing or the first building"""
         old_allocation = self.allocation
-        Portfolio._upgrade_returns(self, new_prices=new_prices)
+        self.operation_dates.append(new_prices.index[-1])
+        Portfolio._upgrade_returns(self, new_prices=new_prices, time_passed=time_passed)
         # find the not corresponding extra-allocation according by the equally-weighted approach
         extra_allocation = {asset: (value/self.value - 1/len(self.assets))
                             for (asset, value) in self.allocation.items()}
@@ -57,14 +65,16 @@ class Portfolio(object):
 
             if asset in asset_turnover['off']:
                 position_off[asset] = value
-                profit_loss[asset] = old_allocation[asset] * self.history_returns[asset]
+                profit_loss[asset] = old_allocation[asset] * self.history_returns[-1][asset]
+                self.sell += value
 
             if (asset in asset_turnover['hold']):
                 old_to_rebalance[asset] = value * np.abs(extra_value)
-                profit_loss[asset] = value * self.history_returns[asset]
+                profit_loss[asset] = value * self.history_returns[-1][asset]
 
         new_position = {key: self.value * 1 / len(new_assets)
                             for key in asset_turnover['new']}
+        self.sell += sum(new_position.values())
 
         if bid_ask_spread:
             transaction_cost = (bid_ask_spread/2) * (sum(position_off.values()) +
@@ -77,27 +87,11 @@ class Portfolio(object):
                            in zip(new_assets, [self.value / len(new_assets)] * len(new_assets))}
         self.history_value.append(self.value)
         self.history_profit_loss.append(profit_loss)
+        self.history_profit_loss[-1]['date'] = self.operation_dates[-1]
         self.assets = new_assets
 
-        # position value of the assets which I have to REMOVE FROM PORTFOLIO
-        # position_off = sum({self.allocation[key]
-        #                    for key in self.allocation.keys()
-        #                    if key in asset_turnover['over']})
-        # profits from assets which have got an extra gain over the starting position value
-        # profit = sum({self.allocation[key] * extra_value
-        #                    for (key, extra_value) in zip(self.allocation.keys(), extra_allocation.values())
-        #                    if (key in asset_turnover['hold'])   and   (extra_value > 0)})
-        # position value for the new assets which I have to put into portfolio
-
-
-        # loss_position = sum({self.allocation[key] * np.abs(extra_value)
-        #                    for (key, extra_value) in zip(self.allocation.keys(), extra_allocation.values())
-        #                    if (key in asset_turnover['hold'])   and   (extra_value < 0)})
-        # total transaction cost from rebalancing:
-        # 1) I have to pay for closing the off positions
-        # 2) I have to pay for closing the part of positions related to the profits (equally-weighted approach)
-        # 3) I have to pay for opening the new positions related to the new-entry assets
-        # 4) I have to pay for restoring the assets in loss which I want to hold into the portfolio
+    def turnover(self):
+        return min(self.buy, self.sell) / np.mean(self.history_value)
 
 
 

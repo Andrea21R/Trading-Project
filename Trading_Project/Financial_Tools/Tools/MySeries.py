@@ -131,6 +131,7 @@ class MySeries(object):
 
     def max_drawdown(self, log_to_console= False):
         """"\nAverage between the global max of the series and the following local min value after the drop."""
+        global lo
         hi = max(self.series)
         idx = 0
         check_min = False
@@ -153,18 +154,25 @@ class MySeries(object):
                     lo = self.series[idx + 1]
                     break
                 elif len(self.series) - 1 < idx + 1:
-                    raise ArithmeticError('the last element is the max. max_drawdown() cannot find the result')
+                    lo = None
 
             idx += 1
 
         # a little summary
-        if log_to_console is True:
-            return print('\nmax: {0}, local min: {1}, max_drawdown: {2}'.format(hi, lo, (hi + lo) / 2))
+        if lo:
+            if log_to_console is True:
+                return print('\nmax: {0}, local min: {1}, max_drawdown: {2}'.format(hi, lo, (hi + lo) / 2))
+            else:
+                return (hi + lo) / 2
         else:
-            return (hi + lo) / 2
+            return None
 
     def calmar_ratio(self):
-        return MySeries.avg_ret(self) / MySeries.max_drawdown(self)
+        max_drawdown = MySeries.max_drawdown(self, log_to_console=False)
+        if max_drawdown:
+            return MySeries.avg_ret(self) / max_drawdown
+        else:
+            return None
 
     def sharpe_ratio(self, rf= None, rf_is_returns=True):
         # I set the rf=0 if the user didn't provide one

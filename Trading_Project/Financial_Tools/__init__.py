@@ -1,3 +1,3 @@
-import Etna_Project.Financial_Tools.Tools as tools
+import Trading_Project.Financial_Tools.Tools as Tools
 
 
